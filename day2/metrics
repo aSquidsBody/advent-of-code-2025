@@ -1,0 +1,39 @@
+C program - 
+        0.08 real         0.05 user         0.00 sys
+             1,277,952  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                 273  page reclaims
+                   1  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   0  voluntary context switches
+                   5  involuntary context switches
+           784,723,628  instructions retired
+           155,272,218  cycles elapsed
+             1,081,632  peak memory footprint
+
+Go program - 
+        0.08 real         0.04 user         0.00 sys
+             9,404,416  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+                 795  page reclaims
+                   0  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                  13  signals received
+                   0  voluntary context switches
+                 159  involuntary context switches
+           696,720,863  instructions retired
+           122,435,416  cycles elapsed
+             8,176,048  peak memory footprint
