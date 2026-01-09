@@ -1,8 +1,5 @@
 #include <stddef.h>
 
-// logging
-void log_fatal(char *string, ...);
-
 // heap data structure
 typedef void heap;
 

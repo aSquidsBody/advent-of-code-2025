@@ -5,7 +5,8 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
-#include "../../util.h"
+#include "../../logging.h"
+#include "../../heap.h"
 
 #define INPUT_FILENAME "input.txt"
 
@@ -37,7 +38,7 @@ typedef struct point_pair {
 } point_pair;
 
 void print_point(point *pt);
-point *new_point(int x, int y, int z, int idx, circuit *circ) {
+point *new_point(size_t x, int y, int z, int idx, circuit *circ) {
   point *pt = (point*)malloc(sizeof(point));
   pt->x = x;
   pt->y = y;
@@ -60,7 +61,7 @@ void print_point(point *pt) {
 void print_circuit(circuit *c) {
   printf("Circuit %ld, len = %ld, cap = %ld\n", c->idx, c->len, c->capacity);
   printf("[");
-  for (int i = 0; i < c->len; i++) {
+  for (size_t i = 0; i < c->len; i++) {
     point *pt = *((c->points) + i);
     printf("%ld", pt->idx);
 
@@ -71,7 +72,7 @@ void print_circuit(circuit *c) {
   printf("]\n");
 }
 
-circuit *new_circuit(int idx, int capacity) {
+circuit *new_circuit(size_t idx, size_t capacity) {
   circuit *c = malloc(sizeof(circuit));
   c->len = 0;
   c->capacity = capacity;
@@ -81,7 +82,7 @@ circuit *new_circuit(int idx, int capacity) {
   return c;
 }
 
-circuit_list *new_circuit_list(int capacity) {
+circuit_list *new_circuit_list(size_t capacity) {
   circuit_list *c = malloc(sizeof(circuit));
   c->len = 0;
   c->capacity = capacity;
@@ -108,9 +109,8 @@ void free_circuit(circuit *c) {
 
 void add_pt(point *pt, circuit *c);
 
-
 int contains(point *pt, circuit *c) {
-  for (int i = 0; i < c->len; i++) {
+  for (size_t i = 0; i < c->len; i++) {
     if (*(c->points + i) == pt) {
       return 1;
     }
@@ -133,8 +133,8 @@ void add_pt(point *pt, circuit *c) {
 
 
 
-int index_pt(point *pt, circuit *c) {
-  for (int i = 0; i < c->len; i++) {
+size_t index_pt(point *pt, circuit *c) {
+  for (size_t i = 0; i < c->len; i++) {
     if ( *(c->points + i) == pt) {
       return i;
     }
@@ -143,10 +143,8 @@ int index_pt(point *pt, circuit *c) {
   return -1;
 }
 
-
-
-int index_circuit(circuit *c, circuit_list *cl) {
-  for (int i = 0; i < cl->len; i++) {
+size_t index_circuit(circuit *c, circuit_list *cl) {
+  for (size_t i = 0; i < cl->len; i++) {
     if ( *(cl->circuits + i) == c) {
       return i;
     }
@@ -157,7 +155,7 @@ int index_circuit(circuit *c, circuit_list *cl) {
 
 
 
-void point_swap(int idx1, int idx2, circuit *c) {
+void point_swap(size_t idx1, size_t idx2, circuit *c) {
   point *temp = *(c->points + idx1);
   *(c->points + idx1) = *(c->points + idx2);
   *(c->points + idx2) = temp;
@@ -165,7 +163,7 @@ void point_swap(int idx1, int idx2, circuit *c) {
 
 
 
-void circuit_swap(int idx1, int idx2, circuit_list *cl) {
+void circuit_swap(size_t idx1, size_t idx2, circuit_list *cl) {
   circuit *temp = *(cl->circuits + idx1);
   *(cl->circuits + idx1) = *(cl->circuits + idx2);
   *(cl->circuits + idx2) = temp;
@@ -176,7 +174,7 @@ void circuit_swap(int idx1, int idx2, circuit_list *cl) {
 
 
 
-void remove_circuit(int idx, circuit_list *lc) {
+void remove_circuit(size_t idx, circuit_list *lc) {
   if (lc->len == 0) {
     return;
   }
@@ -193,7 +191,7 @@ void remove_circuit(int idx, circuit_list *lc) {
 
 void remove_pt(point *pt, circuit *c) {
   if (c->len == 0) {
-    printf("WARNING: tried to remove point %d from empty circuit %d\n", pt->idx, c->idx);
+    printf("WARNING: tried to remove point %ld from empty circuit %ld\n", pt->idx, c->idx);
     return;
   }
   size_t idx = index_pt(pt, c);
@@ -247,7 +245,7 @@ long dist(point *pt1, point *pt2) {
   return sq(pt1->x - pt2->x) + sq(pt1->y - pt2->y) + sq(pt1->z - pt2->z);
 }
 
-heap *init_dist_heap(point **points, int n) {
+heap *init_dist_heap(point **points, size_t n) {
   heap *h = new_heap(NULL, 0, n*(n-1) / 2, dist_compare);
 
   for (size_t i = 0; i < n; i++) {
@@ -321,7 +319,7 @@ void handle_sep_circuits(point *pt1, point *pt2, circuit_list *cl) {
 
 long largest_circuit_product(circuit_list *cl) {
   long arr[3] = {0};
-  for (int i = 0; i< cl->len; i++) {
+  for (size_t i = 0; i< cl->len; i++) {
     long len = cl->circuits[i]->len;
 		if (len > arr[0]) {
 			arr[2] = arr[1];
@@ -362,7 +360,7 @@ void p1() {
 
   dHeap = init_dist_heap(points, nPts);
 
-  for (int i = 0; i < 1000; i++) {
+  for (size_t i = 0; i < 1000; i++) {
     point_pair *shortest  = (point_pair*) heap_pop(dHeap);
     point *pt1 = shortest->pt1;
     point *pt2 = shortest->pt2;
@@ -381,12 +379,52 @@ void p1() {
 }
 
 void p2() {
+  circuit_list *circuits = new_circuit_list(256); // fixed number of circuits
+  point *points[1024]; // fixed array of points
+  heap *dHeap;
+
+  FILE *f = fopen(INPUT_FILENAME, "r");
+  if (f == NULL) {
+    log_fatal("Failed to open file. %s", strerror(errno));
+  }
+
+  int nPts = 0;
+  char line[256];
+  while (fgets(line, 256, f) != NULL) {
+    size_t l = strlen(line);
+    if (line[l - 1] == '\n') {
+      line[l - 1] = '\0';
+    }
+    points[nPts] = parse_line(line);
+    points[nPts]->idx = nPts;
+    nPts++;
+  }
+
+  dHeap = init_dist_heap(points, nPts);
+
+  point *pt1, *pt2;
+  for (size_t i = 0; i < 1000; i++) {
+    point_pair *shortest  = (point_pair*) heap_pop(dHeap);
+    pt1 = shortest->pt1;
+    pt2 = shortest->pt2;
+
+    if (pt1->circ == pt2->circ) {
+      handle_same_circuit(pt1, pt2, circuits);
+    } else {
+      handle_sep_circuits(pt1, pt2, circuits);
+    }
+
+  }
+
+  long result = pt1->x * pt2->x; 
+  printf("Part two: %ld\n", result);
 }
 
 void test();
-int main(int argc, char **argv) {
+int main() {
   // test();
   p1();
+  p2();
 
   return 0;
 }
@@ -394,7 +432,7 @@ int main(int argc, char **argv) {
 void test_add_circuit() {
   circuit *expected[10];
   circuit_list *cl = new_circuit_list(10);
-  for (int i = 0; i < 10; i++) {
+  for (size_t i = 0; i < 10; i++) {
     circuit *c = new_circuit(i, 10);
     add_circuit(c, cl);
     expected[i] = c;
@@ -403,7 +441,7 @@ void test_add_circuit() {
   assert(cl->len == 10);
   assert(cl->circuits != NULL);
 
-  for (int i = 0; i < cl->len; i++) {
+  for (size_t i = 0; i < cl->len; i++) {
     assert(*(cl->circuits + i) == expected[i]);
   }
 
@@ -450,7 +488,7 @@ void test_add_pt() {
 
   assert(c->len == 3);
 
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     assert(*(c->points + i) == expected[i]);
   }
 
@@ -475,7 +513,7 @@ void test_index_pt() {
 
   assert(c->len == 3);
 
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     assert(index_pt(expected[i], c) == i);
   }
 
@@ -500,7 +538,7 @@ void test_index_circuit() {
 
   assert(cl->len == 3);
 
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     assert(index_circuit(expected[i], cl) == i);
   }
 
@@ -527,7 +565,7 @@ void test_point_swap() {
   point_swap(0, 2, c);
   assert(c->len == 3);
   
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     assert( *(c->points + i) == expected[i]);
   }
 
@@ -553,7 +591,7 @@ void test_circuit_swap() {
   circuit_swap(0, 2, cl);
   assert(cl->len == 3);
   
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < 3; i++) {
     assert( *(cl->circuits + i) == expected[i]);
     assert( (*(cl->circuits + i))->idx == i);
   }
@@ -606,7 +644,7 @@ void test_remove_point() {
   remove_pt(p2, c);
   assert(c->len == 2);
   
-  for (int i = 0; i < 2; i++) {
+  for (size_t i = 0; i < 2; i++) {
     assert( *(c->points + i) == expected[i]);
   }
 
@@ -622,13 +660,13 @@ void test_merge_circuits(){
   circuit *c2 = new_circuit(1, 10);
   
   point *expected[10];
-  for (int i = 0; i< 5; i++) {
+  for (size_t i = 0; i< 5; i++) {
     point *pt = new_point(i, i, i, i, NULL);
     expected[i] = pt;
     add_pt(pt, c1);
   }
 
-  for (int i = 5; i< 10; i++) {
+  for (size_t i = 5; i< 10; i++) {
     point *pt = new_point(i, i, i, i, NULL);
     expected[i] = pt;
     add_pt(pt, c2);

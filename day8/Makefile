@@ -1,7 +1,7 @@
 CC      = clang
 CFLAGS  = -g -O0 -Wall -Wextra
 TARGET  = c.exe
-SRC     = ../util.c c/main.c
+SRC     = ../heap.c ../logging.c c/main.c
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) $(SRC) -o $(TARGET)
