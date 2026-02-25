@@ -18,7 +18,7 @@ slice *slice_new_from_array(void *array, size_t arrLen, size_t elemSize, size_t 
 // create a subslice out of an existing slice. startIdx is inclusive, endIdx is exclusive
 slice *slice_new_subslice(slice *s, size_t startIdx, size_t endIdx);
 
-void free_slice(slice *s);
+void slice_free(slice *s);
 
 void *slice_get(size_t idx, slice *s); 
 

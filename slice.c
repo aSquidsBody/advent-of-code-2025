@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "_logging.h"
+#include "logging.h"
 
 size_t max(size_t x, size_t y) {
   if (x < y) {
@@ -49,7 +49,7 @@ void *dynamic_array_elem_ptr(size_t idx, dynamicArray *d) {
   return (d->array + d->elemSize*idx);
 }
 
-void free_dynamic_array(dynamicArray *d) {
+void dynamic_array_free(dynamicArray *d) {
   free(d->array);
   free(d);
 }
@@ -167,10 +167,10 @@ slice *slice_new_subslice(slice *s, size_t startIdx, size_t endIdx) { // endIdx 
   return sub;
 }
 
-void free_slice(slice *s) {
+void slice_free(slice *s) {
   assert(s != NULL);
   if (dynamic_array_get_slice_count(s->dArray) == 0) {
-    free_dynamic_array(s->dArray); 
+    dynamic_array_free(s->dArray); 
   } else {
     dynamic_array_decrement_slice_count(s->dArray);
   }
@@ -188,7 +188,7 @@ void *slice_get(size_t idx, slice *s) {
 void *slice_upper_bound(slice *s) {
   assert(s != NULL);
   assert(s->dArray != NULL);
-  return slice_get(slice_length(s) - 1, s) + dynamic_array_elem_size(s->dArray);
+  return dynamic_array_elem_ptr(s->startIdx + slice_length(s), s->dArray);
 }
 
 void slice_put(void *value, size_t idx, slice *s) {
